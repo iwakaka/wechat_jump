@@ -74,10 +74,7 @@ def findMe2(img):
 		#print("x * y:",x*y)
 	if all([sum_count,sum_x]) :
 		me_x = int(sum_x / sum_count)
-	#print("-----------")
-	#print(sum_x,sum_count)
-	#print("-----ss------")
-	#print(me_x,me_y)
+	
 	cv2.circle(img, (me_x, me_y-10), 2, (0, 255, 255), -1)
 	return me_x,me_y
 	
@@ -88,8 +85,7 @@ def findDist(img):
 	
 	#自己的坐标me_x,me_y
 	me_x,me_y = findMe2(img)
-	#me_x= 355
-	#me_y =984
+	
 	#边界点
 	border_x = border_y = 0
 
@@ -168,8 +164,7 @@ def findDist(img):
 			break
 	center_y = abs(border_y - check_count * 2)
 	cv2.circle(img, (center_x,center_y ), 1, (0, 255, 0), -1)
-	#cv2.circle(img, (center_x,border-3 * check_count), 1, (0, 255, 0), -1)
-	#print 'center X,Y:',center_x,center_y,'check:',check
+	
 
 	return me_x,me_y,center_x,center_y
 
@@ -201,11 +196,7 @@ h=w = 0
 dirpath = ''
 #跳的太准了加入随机,默认不加,为 False
 israndom = False
-#ap = argparse.ArgumentParser()
-#ap.add_argument("-i", "--image", required=True, help="path to the input image")
-#args = vars(ap.parse_args())
-#img = cv2.imread(args["image"])
-#if img is not None:#判断图片是否读入
+
 def main():
 	global w,h
 	
