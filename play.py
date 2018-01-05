@@ -14,7 +14,7 @@ def printImg(img):
 	cv2.imshow("Image", img)
 	cv2.waitKey(0)
 def writeImg(name,img):
-	cv2.imwrite("C:\\Users\\longfish\\Desktop\\bbb\\"+name+".png", img)
+	cv2.imwrite(name+".png", img)
 
 
 ''' 色差计算
@@ -133,7 +133,11 @@ def findDist(img):
 						int(tmp_pix[2]),int(tmp_pix[1]),int(tmp_pix[0]),allowance) :
 			
 				if first_top :
-					
+					#防止棋子高于目标物最上点导致错误增加判断
+					#如果最高点在图像x坐标与棋子中心点xz坐标差 小鱼40(棋子宽60)
+					#则说明扫到了棋子自己了，另外目标不可能在棋子正上方
+					if abs(y-me_x) < 40 :
+						continue
 					#记录最上点
 					top_pix = img[x+step,y+step]
 					
@@ -169,10 +173,12 @@ def findDist(img):
 	return me_x,me_y,center_x,center_y
 
 def jump(dest):
+	global randomsize
 	m = 0.7 #按压时间与距离 系数
 	press_time = int(dest / m)
 	if israndom :
-		press_time = press_time + random.uniform(1, 22)
+		step = int(random.uniform(1, randomsize))
+		press_time = (press_time + step) if (step > randomsize/2) else press_time - step
 	cmd = 'adb shell input swipe {x1} {y1} {x2} {y2} {press_time}'.format(
         x1=btn_x1,
         y1=btn_y1,
@@ -187,16 +193,18 @@ def getscreencap() :
 	os.system('adb shell screencap -p /sdcard/autojump.png')
 	os.system('adb pull /sdcard/autojump.png .')
 
-#屏幕按压点
-btn_x1 = 33
-btn_y1 = 333
-btn_x1 = 33
-btn_y1 = 333
+
+
 h=w = 0
+#屏幕按压点
+btn_x1 = w/2
+btn_y1 = h*5/6
+btn_x1 = w/2
+btn_y1 = h*5/6
 dirpath = ''
 #跳的太准了加入随机,默认不加,为 False
 israndom = False
-
+randomsize = 20		#例如20,产生1~20间随机数,按压时间会在计算出的时间上加或减随机数 毫秒
 def main():
 	global w,h
 	
@@ -210,7 +218,7 @@ def main():
 		me_x,me_y,center_x,center_y = findDist(pix)
 		if not all((me_x,me_y)) :
 			break
-		#writeImg("temp",img)
+		writeImg("temp",img)
 
 		jump(math.sqrt((me_x-center_x)**2+(me_y-center_y)**2))
 		
@@ -227,6 +235,7 @@ def main():
 	
 if __name__ == "__main__":
     main()
+    
 
    
 
