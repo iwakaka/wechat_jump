@@ -52,10 +52,10 @@ def findMe2(img):
 			if y < left or y > border :
 				continue
 			#print(x,y)
-			if y < (int(w/4) +2) :
-				#print(y,int(w/4) +2)
-				cv2.circle(img, (y, x), 2, (0, 0, 255), -1)
-				#printImg(img)
+			#if y < (int(w/4) +2) :
+			#	print(y,int(w/4) +2)
+			#	#cv2.circle(img, (y, x), 2, (0, 0, 255), -1)
+			#	#printImg(img)
 			down_pix= pix[x,y]
 			#print("--------------")
 			if 50 < down_pix[2] <60 and 50 < down_pix[1] <60 and 90 < down_pix[0] <100:
@@ -82,10 +82,10 @@ def findMe2(img):
 def findDist(img):
 	global w,h
 	#top_pix = img[h/3,1]
-	
+	#starttime =time.time()
 	#自己的坐标me_x,me_y
 	me_x,me_y = findMe2(img)
-	
+	#print 'findme2 time:',time.time()-starttime
 	#边界点
 	border_x = border_y = 0
 
@@ -158,6 +158,7 @@ def findDist(img):
 							#print 'max you border:',border
 						border_y = x
 						if border == old_border :
+							border_x = y
 							check +=1
 						#print 'isleft:',isleft
 		cv2.circle(img, (1,x), 1, (0, 0, 255), -1)
@@ -170,15 +171,18 @@ def findDist(img):
 	cv2.circle(img, (center_x,center_y ), 1, (0, 255, 0), -1)
 	
 
-	return me_x,me_y,center_x,center_y
+	return me_x,me_y,center_x,center_y,abs(border_x-center_x)
 
-def jump(dest):
-	global randomsize
+def jump(dist,distwidth):
+	global randomsize,btn_x1,btn_y1,btn_x1,btn_y1
+
 	m = 0.7 #按压时间与距离 系数
-	press_time = int(dest / m)
-	if israndom :
-		step = int(random.uniform(1, randomsize))
-		press_time = (press_time + step) if (step > randomsize/2) else press_time - step
+	press_time = int(dist / m)
+	if israndom and distwidth >50 and (random.uniform(7,randommax) % 7) >2 :	#目标物半径小于50  不添加
+		print 'one press_time: ',press_time
+		step = int(random.uniform(randommin, randommax))
+		press_time = (press_time + step) if (step > (randommax-randommin)/2) else press_time - step
+		print 'two press_time: ',press_time
 	cmd = 'adb shell input swipe {x1} {y1} {x2} {y2} {press_time}'.format(
         x1=btn_x1,
         y1=btn_y1,
@@ -197,17 +201,17 @@ def getscreencap() :
 
 h=w = 0
 #屏幕按压点
-btn_x1 = w/2
-btn_y1 = h*5/6
-btn_x1 = w/2
-btn_y1 = h*5/6
+btn_x1 = btn_y1 = btn_x1 = btn_y1 = 0
 dirpath = ''
-#跳的太准了加入随机,默认不加,为 False
-israndom = False
-randomsize = 20		#例如20,产生1~20间随机数,按压时间会在计算出的时间上加或减随机数 毫秒
+#跳的太准了加入随机,默认不加,为 False,True
+israndom = True
+randommin = 30		#例如20,产生1~20间随机数,按压时间会在计算出的时间上加或减随机数 毫秒
+randommax = 60
+
 def main():
-	global w,h
-	
+	global w,h,btn_x1,btn_y1,btn_x1,btn_y1
+	retrytime =0
+
 	while True:
 		this_time=time.time()
 		getscreencap()
@@ -215,22 +219,36 @@ def main():
 		h,w,temp = img.shape
 		pix = img.copy()
 		
-		me_x,me_y,center_x,center_y = findDist(pix)
-		if not all((me_x,me_y)) :
-			break
-		writeImg("temp",img)
+		btn_x1 = int(w/2 * (random.random() / 4 + 1))
+		btn_y1 = int(h*5/6 * (random.random() / 4 + 1))
+		btn_x1 = int(w/2 * (random.random() / 4 + 1))
+		btn_y1 = int(h*5/6 * (random.random() / 4 + 1))
 
-		jump(math.sqrt((me_x-center_x)**2+(me_y-center_y)**2))
-		
+		me_x,me_y,center_x,center_y,distwidth = findDist(pix)
 		print 'me_x,me_y:(',me_x,me_y,')', 'c_x,c_y:',center_x,center_y
+		writeImg("temp2",pix)
+		if not all((me_x,me_y)) :
+			if retrytime >2 :
+				break
+			os.system('adb shell input swipe {x1} {y1} {x2} {y2} '.format(
+	        x1=btn_x1,
+	        y1=btn_y1,
+	        x2=btn_x1,
+	        y2=btn_y1))
+			retrytime +=1
+			
+		writeImg("temp",img)
+		print('calculate time:',time.time() - this_time)
+		jump(math.sqrt((me_x-center_x)**2+(me_y-center_y)**2),distwidth)
+		
 
 		print 'distance:',math.sqrt((me_x-center_x)**2+(me_y-center_y)**2)
 		
 		print('this time:',time.time() - this_time)
 		print('run total time:' ,time.time() - start_time)
 
-		#writeImg("temp2",img)
-		time.sleep(2)
+		#
+		time.sleep(1)
 		
 	
 if __name__ == "__main__":
